@@ -3,6 +3,7 @@
 import { useActionState, useState } from 'react'
 import { SubmitButton } from '@/components/submit-button'
 import { displayPhone, money } from '@/lib/format'
+import { progressKey, useSentProgress } from '@/lib/broadcast-progress'
 import {
   buildBroadcast,
   recordBroadcast,
@@ -76,7 +77,14 @@ function ComposerRun({
   const [selected, setSelected] = useState<string[]>([])
   const [audience, setAudience] = useState<Audience>('waiting')
   const [edited, setEdited] = useState<string | null>(null)
-  const [sent, setSent] = useState<string[]>([])
+
+  // Kept on the device rather than in component state: a phone will drop this
+  // tab while she's in WhatsApp, and losing her place halfway through fifty
+  // recipients means starting over.
+  const prepared = state.prepared
+  const { sent, markSent } = useSentProgress(
+    progressKey(prepared?.productIds ?? [], prepared?.message ?? '')
+  )
 
   const chosen = products.filter((product) => selected.includes(product.id))
 
@@ -172,13 +180,7 @@ function ComposerRun({
                   href={`https://wa.me/${recipient.phone}?text=${encodeURIComponent(message)}`}
                   target="_blank"
                   rel="noreferrer"
-                  onClick={() =>
-                    setSent((current) =>
-                      current.includes(recipient.id)
-                        ? current
-                        : [...current, recipient.id]
-                    )
-                  }
+                  onClick={() => markSent(recipient.id)}
                   className={`shrink-0 px-3 text-sm ${
                     done ? 'btn-secondary' : 'btn-primary'
                   }`}

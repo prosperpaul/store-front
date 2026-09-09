@@ -3,6 +3,7 @@
 import { createAdminClient } from '@/lib/supabase/admin'
 import { getSellerBySlug, getStorefrontProduct } from '@/lib/storefront'
 import { isPlausiblePhone, normalisePhone } from '@/lib/format'
+import { clientKey, rateLimit } from '@/lib/rate-limit'
 
 export type NotifyState = { error?: string; done?: boolean }
 
@@ -28,6 +29,12 @@ export async function joinWaitlist(
   const phone = normalisePhone(rawPhone)
   if (!isPlausiblePhone(phone)) {
     return { error: 'Enter a WhatsApp number we can reach you on, e.g. 0801 234 5678.' }
+  }
+
+  // Same service-role exposure as ordering, so the same guard.
+  const limit = rateLimit(await clientKey('notify'), 15, 60 * 60 * 1000)
+  if (!limit.allowed) {
+    return { error: 'Too many requests from this device. Please try again later.' }
   }
 
   const seller = await getSellerBySlug(slug)

@@ -3,6 +3,7 @@
 import Link from 'next/link'
 import { useActionState } from 'react'
 import { SubmitButton } from '@/components/submit-button'
+import { PasswordField } from '@/components/password-field'
 import type { AuthState } from './actions'
 
 export function AuthForm({
@@ -37,21 +38,20 @@ export function AuthForm({
         />
       </div>
 
-      <div>
-        <label className="label" htmlFor="password">
-          Password
-        </label>
-        <input
-          id="password"
-          name="password"
-          type="password"
-          className="field"
-          autoComplete={isSignUp ? 'new-password' : 'current-password'}
-          minLength={isSignUp ? 8 : undefined}
-          required
-        />
-        {isSignUp && <p className="hint">At least 8 characters.</p>}
-      </div>
+      <PasswordField
+        autoComplete={isSignUp ? 'new-password' : 'current-password'}
+        minLength={isSignUp ? 8 : undefined}
+        hint={isSignUp ? 'At least 8 characters.' : undefined}
+      />
+
+      {!isSignUp && (
+        <Link
+          href="/forgot-password"
+          className="-mt-1 self-start text-sm font-bold text-muted"
+        >
+          Forgot your password?
+        </Link>
+      )}
 
       <SubmitButton pendingLabel={isSignUp ? 'Creating...' : 'Signing in...'}>
         {isSignUp ? 'Create my store' : 'Sign in'}

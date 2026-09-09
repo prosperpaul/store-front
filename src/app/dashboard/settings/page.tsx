@@ -6,7 +6,7 @@ import { StoreForm } from '../setup/store-form'
 export const metadata: Metadata = { title: 'Store settings' }
 
 export default async function SettingsPage() {
-  const { seller } = await requireSeller()
+  const { user, seller } = await requireSeller()
 
   return (
     <div className="mx-auto w-full max-w-md px-5 py-6">
@@ -15,7 +15,7 @@ export default async function SettingsPage() {
         Your business details, link and delivery note.
       </p>
 
-      <StoreForm seller={seller} submitLabel="Save changes" />
+      <StoreForm seller={seller} userId={user.id} submitLabel="Save changes" />
 
       <form action={signOut} className="mt-10 border-t-2 border-line-soft pt-6">
         <button type="submit" className="btn-secondary w-full">

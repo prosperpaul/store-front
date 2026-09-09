@@ -6,6 +6,7 @@ import { PENDING_ORDER_COOKIE } from '@/lib/orders'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { getSellerBySlug, getStorefrontProduct } from '@/lib/storefront'
 import { isPlausiblePhone, normalisePhone } from '@/lib/format'
+import { clientKey, rateLimit } from '@/lib/rate-limit'
 import { orderLink } from '@/lib/whatsapp'
 
 export type OrderState = { error?: string }
@@ -38,6 +39,13 @@ export async function placeOrder(
   const phone = normalisePhone(rawPhone)
   if (!isPlausiblePhone(phone)) {
     return { error: 'Enter a WhatsApp number we can reach you on, e.g. 0801 234 5678.' }
+  }
+
+  // This writes with the service role key, so it's the one door worth
+  // watching. A real buyer orders a handful of times an hour at most.
+  const limit = rateLimit(await clientKey('order'), 10, 60 * 60 * 1000)
+  if (!limit.allowed) {
+    return { error: 'Too many orders from this device. Please try again later.' }
   }
 
   const seller = await getSellerBySlug(slug)

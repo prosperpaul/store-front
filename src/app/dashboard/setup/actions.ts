@@ -37,6 +37,14 @@ export async function saveStore(
   const rawSlug = String(formData.get('slug') ?? '').trim()
   const rawPhone = String(formData.get('whatsapp') ?? '').trim()
   const deliveryNote = String(formData.get('delivery_note') ?? '').trim()
+  const rawLogo = String(formData.get('logo_url') ?? '').trim()
+
+  // Only accept a URL we put there ourselves -- this field is a plain string
+  // in a form, so it would otherwise accept any address at all.
+  const logoUrl =
+    rawLogo.startsWith(`${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/`)
+      ? rawLogo
+      : null
 
   if (!businessName) return { error: 'Your business needs a name.' }
 
@@ -60,6 +68,7 @@ export async function saveStore(
     business_name: businessName,
     whatsapp,
     delivery_note: deliveryNote || null,
+    logo_url: logoUrl,
   })
 
   if (error) {

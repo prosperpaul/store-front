@@ -81,6 +81,28 @@ people aren't pestered next time.
 `opted_out` is honoured by every audience. Buyers ask to stop inside WhatsApp
 where we can't see it, so the seller records it on the People tab.
 
+### Email templates (required)
+
+Supabase's default templates send people to its own verify endpoint, which
+returns the session in the URL fragment -- which a server can't read. Point
+them at `/auth/confirm` instead, which exchanges a token for a real session.
+
+Dashboard -> **Authentication** -> **Email Templates**:
+
+**Confirm signup** -- replace the link's `href` with:
+```
+{{ .SiteURL }}/auth/confirm?token_hash={{ .TokenHash }}&type=email
+```
+
+**Reset password** -- replace the link's `href` with:
+```
+{{ .SiteURL }}/auth/confirm?token_hash={{ .TokenHash }}&type=recovery&next=/reset-password
+```
+
+Then set **Authentication -> URL Configuration -> Site URL** to wherever the
+app is running. `{{ .SiteURL }}` comes from there, so if it says `localhost`
+the links in real emails will point at the recipient's own machine.
+
 ### How buyer capture works
 
 A `wa.me` click tells us nothing -- WhatsApp sends no callback -- so the
@@ -119,6 +141,25 @@ through server routes using the service role key.
 - [x] **Phase 4** -- buyer capture into customers/orders
 - [x] **Phase 5** -- sold + waitlist + broadcast composer
 - [ ] **Phase 6** -- mobile polish, onboard 5 test sellers
+      (blocked: needs deploying first -- see below)
 - [ ] **Phase 7** -- Paystack billing
 
 Build mobile-first. Sellers work from mid-range Android phones, not laptops.
+
+## Before real sellers use this
+
+**Deploy it.** Order messages carry a link back to the item, built from
+`NEXT_PUBLIC_SITE_URL`. While that says `localhost:3000`, every link a buyer
+receives points at the seller's own computer and is dead on arrival. Set it
+to the deployed URL, and set Supabase's Site URL to match.
+
+**Known limits, deliberate:**
+
+- Broadcasts are sent by hand, one tap per recipient. Sending them for her
+  needs the WhatsApp Business API, which requires business verification and
+  pre-approved message templates.
+- Rate limiting counts in process memory (`src/lib/rate-limit.ts`). It resets
+  on deploy and isn't shared between instances. Move it to Postgres or Redis
+  if this ever runs on more than one.
+- Broadcast progress lives in the seller's browser, so working through a drop
+  on two devices won't stay in sync.

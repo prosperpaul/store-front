@@ -3,6 +3,7 @@ import Image from 'next/image'
 import { requireSeller } from '@/lib/auth'
 import { createClient } from '@/lib/supabase/server'
 import { displayPhone, money, shortDate } from '@/lib/format'
+import { StatusControl } from './status-control'
 import type { OrderStatus } from '@/lib/types'
 
 export const metadata: Metadata = { title: 'Orders' }
@@ -108,6 +109,10 @@ export default async function OrdersPage() {
                   &ldquo;{order.note}&rdquo;
                 </p>
               )}
+
+              <div className="mt-2.5">
+                <StatusControl orderId={order.id} status={order.status} />
+              </div>
             </li>
           ))}
         </ul>

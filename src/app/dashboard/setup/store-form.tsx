@@ -3,14 +3,17 @@
 import { useActionState, useState } from 'react'
 import { SubmitButton } from '@/components/submit-button'
 import { slugify } from '@/lib/format'
+import { LogoUploader } from './logo-uploader'
 import { saveStore, type StoreState } from './actions'
 import type { Seller } from '@/lib/types'
 
 export function StoreForm({
   seller,
+  userId,
   submitLabel,
 }: {
   seller: Seller | null
+  userId: string
   submitLabel: string
 }) {
   const [state, formAction] = useActionState<StoreState, FormData>(saveStore, {})
@@ -25,6 +28,12 @@ export function StoreForm({
   return (
     <form action={formAction} className="flex flex-col gap-5">
       {state.error && <p className="alert-error">{state.error}</p>}
+
+      <LogoUploader
+        userId={userId}
+        initialLogo={seller?.logo_url ?? null}
+        businessName={name}
+      />
 
       <div>
         <label className="label" htmlFor="business_name">

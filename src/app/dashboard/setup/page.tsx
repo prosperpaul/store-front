@@ -26,7 +26,7 @@ export default async function SetupPage() {
       <p className="mb-6 text-muted">
         Four answers and your storefront is live.
       </p>
-      <StoreForm seller={seller as Seller | null} submitLabel="Create my store" />
+      <StoreForm seller={seller as Seller | null} userId={user.id} submitLabel="Create my store" />
     </main>
   )
 }
