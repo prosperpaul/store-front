@@ -1,0 +1,76 @@
+'use server'
+
+import { redirect } from 'next/navigation'
+import { revalidatePath } from 'next/cache'
+import { requireUser } from '@/lib/auth'
+import { createClient } from '@/lib/supabase/server'
+import { isPlausiblePhone, normalisePhone, slugify } from '@/lib/format'
+
+export type StoreState = { error?: string }
+
+const RESERVED_SLUGS = new Set([
+  'dashboard',
+  'login',
+  'signup',
+  'api',
+  'admin',
+  'settings',
+  'about',
+  'pricing',
+  'terms',
+  'privacy',
+  'auth',
+])
+
+/**
+ * Creates the seller row on first run, and edits it afterwards.
+ * The slug is what the whole public storefront hangs off, so it's validated
+ * hard: reserved words out, uniqueness enforced by the DB.
+ */
+export async function saveStore(
+  _prev: StoreState,
+  formData: FormData
+): Promise<StoreState> {
+  const user = await requireUser()
+
+  const businessName = String(formData.get('business_name') ?? '').trim()
+  const rawSlug = String(formData.get('slug') ?? '').trim()
+  const rawPhone = String(formData.get('whatsapp') ?? '').trim()
+  const deliveryNote = String(formData.get('delivery_note') ?? '').trim()
+
+  if (!businessName) return { error: 'Your business needs a name.' }
+
+  const slug = slugify(rawSlug || businessName)
+  if (slug.length < 3) {
+    return { error: 'The store link needs at least 3 letters or numbers.' }
+  }
+  if (RESERVED_SLUGS.has(slug)) {
+    return { error: `"${slug}" is reserved. Please pick another store link.` }
+  }
+
+  const whatsapp = normalisePhone(rawPhone)
+  if (!isPlausiblePhone(whatsapp)) {
+    return { error: 'That WhatsApp number does not look right. Example: 0801 234 5678.' }
+  }
+
+  const supabase = await createClient()
+  const { error } = await supabase.from('sellers').upsert({
+    id: user.id,
+    slug,
+    business_name: businessName,
+    whatsapp,
+    delivery_note: deliveryNote || null,
+  })
+
+  if (error) {
+    // 23505 = unique violation, which here can only be the slug.
+    if (error.code === '23505') {
+      return { error: `"${slug}" is already taken. Try adding a word to it.` }
+    }
+    return { error: error.message }
+  }
+
+  revalidatePath('/dashboard', 'layout')
+  revalidatePath(`/${slug}`, 'layout')
+  redirect('/dashboard')
+}
