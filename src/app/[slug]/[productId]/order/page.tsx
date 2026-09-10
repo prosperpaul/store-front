@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { getSellerBySlug, getStorefrontProduct } from '@/lib/storefront'
 import { money } from '@/lib/format'
+import { availableChannels, CHANNELS } from '@/lib/channels'
 import { OrderForm } from './order-form'
 
 export const revalidate = 3600
@@ -13,16 +14,25 @@ export const metadata: Metadata = { title: 'Your order', robots: { index: false 
 
 export default async function OrderPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ slug: string; productId: string }>
+  searchParams: Promise<{ via?: string }>
 }) {
   const { slug, productId } = await params
+  const { via } = await searchParams
 
   const seller = await getSellerBySlug(slug)
   if (!seller) notFound()
 
   const product = await getStorefrontProduct(seller.id, productId)
   if (!product) notFound()
+
+  // Fall back to WhatsApp for an unknown value, or one the seller hasn't
+  // actually set up -- a hand-typed ?via= shouldn't produce a dead link.
+  const offered = availableChannels(seller)
+  const channel =
+    (via && offered.find((c) => c.id === via)) || CHANNELS.whatsapp
 
   // Nothing to order on a sold item -- send them back to the item, which
   // offers to ask about something similar instead.
@@ -52,7 +62,9 @@ export default async function OrderPage({
 
       <h1 className="mt-4 text-3xl font-extrabold">Almost there</h1>
       <p className="mt-1 text-muted">
-        One detail, then WhatsApp opens with your order already typed.
+        {channel.prefills
+          ? `One detail, then ${channel.label} opens with your order already typed.`
+          : `One detail, then ${channel.label} opens with your order ready to paste.`}
       </p>
 
       <div className="card mt-5 flex items-center gap-3 p-3">
@@ -84,6 +96,8 @@ export default async function OrderPage({
         slug={slug}
         productId={product.id}
         sellerName={seller.business_name}
+        channel={channel.id}
+        channelLabel={channel.label}
       />
     </main>
   )

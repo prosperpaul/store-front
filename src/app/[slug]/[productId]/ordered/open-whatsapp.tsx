@@ -10,7 +10,13 @@ import { useEffect } from 'react'
  * be thrown straight back into WhatsApp every time they tried to return --
  * trapped, unable to reach the store again.
  */
-export function OpenWhatsApp({ link }: { link: string }) {
+export function OpenWhatsApp({
+  link,
+  label = 'Open WhatsApp',
+}: {
+  link: string
+  label?: string
+}) {
   useEffect(() => {
     const key = `ss-opened:${link}`
 
@@ -27,7 +33,7 @@ export function OpenWhatsApp({ link }: { link: string }) {
   // Always rendered, so there's a way through even if the hand-off is blocked.
   return (
     <a href={link} target="_blank" rel="noreferrer" className="btn-primary w-full">
-      Open WhatsApp
+      {label}
     </a>
   )
 }

@@ -7,7 +7,8 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { getSellerBySlug, getStorefrontProduct } from '@/lib/storefront'
 import { isPlausiblePhone, normalisePhone } from '@/lib/format'
 import { clientKey, rateLimit } from '@/lib/rate-limit'
-import { orderLink } from '@/lib/whatsapp'
+import { orderMessage } from '@/lib/whatsapp'
+import { CHANNELS, channelLink, isChannelId, type ChannelId } from '@/lib/channels'
 
 export type OrderState = { error?: string }
 
@@ -35,6 +36,9 @@ export async function placeOrder(
   const rawPhone = String(formData.get('phone') ?? '')
   const name = String(formData.get('name') ?? '').trim().slice(0, 60)
   const note = String(formData.get('note') ?? '').trim().slice(0, MAX_NOTE)
+
+  const requested = String(formData.get('via') ?? 'whatsapp')
+  const channel: ChannelId = isChannelId(requested) ? requested : 'whatsapp'
 
   const phone = normalisePhone(rawPhone)
   if (!isPlausiblePhone(phone)) {
@@ -113,21 +117,31 @@ export async function placeOrder(
       product_id: product.id,
       customer_id: customerId,
       note: note || null,
+      // Records where her customers actually are, which she'd otherwise be
+      // guessing at.
+      channel,
     })
   }
 
-  // Hand the finished WhatsApp link to the confirmation page in a short-lived
-  // cookie rather than the URL -- the buyer's note can be long, and it has no
+  // Hand the finished link to the confirmation page in a short-lived cookie
+  // rather than the URL -- the buyer's note can be long, and it has no
   // business sitting in their address bar or browser history.
-  const cookieStore = await cookies()
-  cookieStore.set(PENDING_ORDER_COOKIE, orderLink(seller, product, note || null), {
-    maxAge: 300,
-    httpOnly: true,
-    sameSite: 'lax',
-    path: '/',
-  })
+  const message = orderMessage(seller, product, note || null)
 
-  // Land them on our own page, which then opens WhatsApp. Redirecting
-  // straight to WhatsApp left them with nothing to come back to.
+  const cookieStore = await cookies()
+  cookieStore.set(
+    PENDING_ORDER_COOKIE,
+    JSON.stringify({
+      link: channelLink(seller, channel, message),
+      channel,
+      // Instagram, Messenger and Telegram open an empty box, so the
+      // confirmation page offers this text to copy instead.
+      message: CHANNELS[channel].prefills ? null : message,
+    }),
+    { maxAge: 300, httpOnly: true, sameSite: 'lax', path: '/' }
+  )
+
+  // Land them on our own page, which then opens the chat. Redirecting
+  // straight out left them with nothing to come back to.
   redirect(`/${slug}/${product.id}/ordered`)
 }

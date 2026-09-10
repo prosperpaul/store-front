@@ -8,6 +8,7 @@ import {
 import { money } from '@/lib/format'
 import { productUrl } from '@/lib/site'
 import { similarItemLink } from '@/lib/whatsapp'
+import { availableChannels } from '@/lib/channels'
 import { PhotoCarousel } from './photo-carousel'
 
 export const revalidate = 3600
@@ -58,6 +59,9 @@ export default async function ProductPage({ params }: ItemParams) {
 
   const { seller, product } = found
   const sold = product.status === 'sold'
+
+  // WhatsApp is the headline button; the rest sit under it.
+  const others = availableChannels(seller).filter((c) => c.id !== 'whatsapp')
 
   return (
     <main className="mx-auto w-full max-w-2xl px-5 py-6">
@@ -129,9 +133,37 @@ export default async function ProductPage({ params }: ItemParams) {
             </a>
           </div>
         ) : (
-          <Link href={`/${slug}/${product.id}/order`} className="btn-primary w-full">
-            Order on WhatsApp
-          </Link>
+          <>
+            <Link
+              href={`/${slug}/${product.id}/order`}
+              className="btn-primary w-full"
+            >
+              Order on WhatsApp
+            </Link>
+
+            {/*
+              A buyer who came from Instagram would rather answer there. Each
+              of these records the same order -- only the last hop differs.
+            */}
+            {others.length > 0 && (
+              <div className="mt-3">
+                <p className="mb-2 text-center text-sm font-medium text-muted">
+                  or order through
+                </p>
+                <div className="flex flex-wrap justify-center gap-2">
+                  {others.map((channel) => (
+                    <Link
+                      key={channel.id}
+                      href={`/${slug}/${product.id}/order?via=${channel.id}`}
+                      className="btn-quiet"
+                    >
+                      {channel.label}
+                    </Link>
+                  ))}
+                </div>
+              </div>
+            )}
+          </>
         )}
         <p className="hint text-center">
           {sold

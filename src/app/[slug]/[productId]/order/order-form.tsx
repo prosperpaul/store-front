@@ -9,10 +9,14 @@ export function OrderForm({
   slug,
   productId,
   sellerName,
+  channel,
+  channelLabel,
 }: {
   slug: string
   productId: string
   sellerName: string
+  channel: string
+  channelLabel: string
 }) {
   const remembered = useRememberedBuyer()
 
@@ -30,6 +34,7 @@ export function OrderForm({
 
       <input type="hidden" name="slug" value={slug} />
       <input type="hidden" name="product_id" value={productId} />
+      <input type="hidden" name="via" value={channel} />
 
       {remembered.phone && (
         <p className="alert-notice">Welcome back. We filled in your details.</p>
@@ -89,8 +94,8 @@ export function OrderForm({
         />
       </div>
 
-      <SubmitButton pendingLabel="Opening WhatsApp...">
-        Send order on WhatsApp
+      <SubmitButton pendingLabel={`Opening ${channelLabel}...`}>
+        Send order on {channelLabel}
       </SubmitButton>
     </form>
   )

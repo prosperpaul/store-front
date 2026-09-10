@@ -96,6 +96,84 @@ export function StoreForm({
         <p className="hint">Orders open a chat with this number.</p>
       </div>
 
+      {/*
+        Everything here is optional. A buyer arriving from Instagram often
+        wants to reply where they already are, so each handle she adds is one
+        more place an order can start.
+      */}
+      <fieldset className="card-soft p-4">
+        <legend className="px-1 text-sm font-bold">
+          Where else can buyers reach you?
+        </legend>
+
+        <label className="mt-1 flex items-start gap-3">
+          <input
+            type="checkbox"
+            name="accepts_sms"
+            value="yes"
+            defaultChecked={seller?.accepts_sms ?? false}
+            className="mt-0.5 h-5 w-5 shrink-0 accent-brand"
+          />
+          <span className="text-sm font-medium">
+            Accept orders by text message on the same number
+          </span>
+        </label>
+
+        <div className="mt-4">
+          <label className="label" htmlFor="instagram">
+            Instagram username
+          </label>
+          <input
+            id="instagram"
+            name="instagram"
+            className="field"
+            defaultValue={seller?.instagram ?? ''}
+            autoCapitalize="none"
+            autoCorrect="off"
+            spellCheck={false}
+            placeholder="adasthriftstore"
+          />
+        </div>
+
+        <div className="mt-3">
+          <label className="label" htmlFor="facebook">
+            Facebook page username
+          </label>
+          <input
+            id="facebook"
+            name="facebook"
+            className="field"
+            defaultValue={seller?.facebook ?? ''}
+            autoCapitalize="none"
+            autoCorrect="off"
+            spellCheck={false}
+            placeholder="adasthriftstore"
+          />
+        </div>
+
+        <div className="mt-3">
+          <label className="label" htmlFor="telegram">
+            Telegram username
+          </label>
+          <input
+            id="telegram"
+            name="telegram"
+            className="field"
+            defaultValue={seller?.telegram ?? ''}
+            autoCapitalize="none"
+            autoCorrect="off"
+            spellCheck={false}
+            placeholder="adasthriftstore"
+          />
+        </div>
+
+        <p className="hint">
+          Paste the @name or the whole profile link &mdash; we&rsquo;ll tidy it
+          up. Only WhatsApp and text can carry the order already typed; the
+          others open an empty chat, so buyers get the message to paste.
+        </p>
+      </fieldset>
+
       <div>
         <label className="label" htmlFor="delivery_note">
           Delivery note <span className="font-normal text-muted">(optional)</span>

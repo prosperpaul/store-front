@@ -5,8 +5,14 @@ import { revalidatePath } from 'next/cache'
 import { requireUser } from '@/lib/auth'
 import { createClient } from '@/lib/supabase/server'
 import { isPlausiblePhone, normalisePhone, slugify } from '@/lib/format'
+import { normaliseHandle } from '@/lib/channels'
 
 export type StoreState = { error?: string }
+
+/** Empty stays null rather than an empty string, so it reads as "not set". */
+function handle(value: FormDataEntryValue | null): string | null {
+  return normaliseHandle(String(value ?? '')) || null
+}
 
 const RESERVED_SLUGS = new Set([
   'dashboard',
@@ -69,6 +75,10 @@ export async function saveStore(
     whatsapp,
     delivery_note: deliveryNote || null,
     logo_url: logoUrl,
+    instagram: handle(formData.get('instagram')),
+    facebook: handle(formData.get('facebook')),
+    telegram: handle(formData.get('telegram')),
+    accepts_sms: formData.get('accepts_sms') === 'yes',
   })
 
   if (error) {

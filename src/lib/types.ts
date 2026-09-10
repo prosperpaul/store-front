@@ -14,6 +14,12 @@ export type Seller = {
   slug: string
   business_name: string
   whatsapp: string
+  /** Other places buyers can reach her. Bare usernames, no @ or URL. */
+  instagram: string | null
+  facebook: string | null
+  telegram: string | null
+  /** Whether she'll take orders as a plain text message on her number. */
+  accepts_sms: boolean
   logo_url: string | null
   delivery_note: string | null
   plan: string
@@ -50,6 +56,8 @@ export type Order = {
   customer_id: string | null
   status: OrderStatus
   note: string | null
+  /** Which channel the buyer chose to reach the seller on. */
+  channel: string
   created_at: string
 }
 
