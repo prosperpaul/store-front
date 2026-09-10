@@ -24,7 +24,13 @@ export async function signUp(
   if (password.length < 8) return { error: 'Use at least 8 characters for the password.' }
 
   const supabase = await createClient()
-  const { data, error } = await supabase.auth.signUp({ email, password })
+  const { data, error } = await supabase.auth.signUp({
+    email,
+    password,
+    // Steers Supabase's stock confirmation email at our callback, so the
+    // template itself never has to be edited (which would need custom SMTP).
+    options: { emailRedirectTo: `${siteUrl()}/auth/callback` },
+  })
 
   if (error) return { error: error.message }
 
@@ -68,7 +74,7 @@ export async function requestPasswordReset(
 
   const supabase = await createClient()
   await supabase.auth.resetPasswordForEmail(email, {
-    redirectTo: `${siteUrl()}/auth/confirm?next=/reset-password`,
+    redirectTo: `${siteUrl()}/auth/callback?next=/reset-password`,
   })
 
   return {

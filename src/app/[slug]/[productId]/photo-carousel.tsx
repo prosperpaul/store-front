@@ -61,58 +61,72 @@ export function PhotoCarousel({
     setIndex(wrapped)
   }
 
-  // Two caps on how big the photo gets: max-w so it isn't a slab on a wide
-  // screen, and max-h in viewport units so on a short screen the name, price
-  // and order button aren't pushed below the fold behind it.
   return (
-    <div className="relative mx-auto mt-4 w-full max-w-sm sm:max-w-md">
-      <ul
-        ref={stripRef}
-        className="flex aspect-square max-h-[58vh] snap-x snap-mandatory overflow-x-auto overscroll-x-contain rounded-2xl border-2 border-line scrollbar-none [&::-webkit-scrollbar]:hidden"
+    <div className="mt-4">
+      {/*
+        This box is both the photo frame and the arrows' positioning context,
+        so the two can't drift apart. Capping height on an inner element was
+        the bug: the frame shrank, the wrapper didn't, and the arrows stayed
+        pinned to the wrapper -- one on the photo, one adrift in the margin.
+
+        min() caps the width by whichever bites first: 28rem on a wide screen,
+        58vh on a short one, so the square never crowds the price and order
+        button out of view.
+      */}
+      <div
+        className="relative mx-auto aspect-square w-full"
+        style={{ maxWidth: 'min(28rem, 58vh)' }}
       >
-        {photos.map((photo, position) => (
-          <li
-            key={photo}
-            className="relative h-full w-full shrink-0 snap-start bg-surface"
-          >
-            <Image
-              src={photo}
-              alt={`${name} photo ${position + 1}`}
-              fill
-              sizes="(min-width: 640px) 448px, 100vw"
-              className="object-cover"
-              priority={position === 0}
-            />
-          </li>
-        ))}
-      </ul>
+        <ul
+          ref={stripRef}
+          className="flex h-full w-full snap-x snap-mandatory overflow-x-auto overscroll-x-contain rounded-2xl border-2 border-line scrollbar-none [&::-webkit-scrollbar]:hidden"
+        >
+          {photos.map((photo, position) => (
+            <li
+              key={photo}
+              className="relative h-full w-full shrink-0 snap-start bg-surface"
+            >
+              <Image
+                src={photo}
+                alt={`${name} photo ${position + 1}`}
+                fill
+                sizes="(min-width: 640px) 448px, 100vw"
+                className="object-cover"
+                priority={position === 0}
+              />
+            </li>
+          ))}
+        </ul>
+
+        {many && (
+          <>
+            <Arrow direction="prev" onClick={() => go(index - 1)} />
+            <Arrow direction="next" onClick={() => go(index + 1)} />
+
+            {/* Plain count, for when the dots get too many to read at a glance. */}
+            <span className="badge absolute right-3 top-3 bg-background/90">
+              {index + 1}/{photos.length}
+            </span>
+          </>
+        )}
+      </div>
 
       {many && (
-        <>
-          <Arrow direction="prev" onClick={() => go(index - 1)} />
-          <Arrow direction="next" onClick={() => go(index + 1)} />
-
-          {/* Plain count, for when the dots get too many to read at a glance. */}
-          <span className="badge absolute right-3 top-3 bg-background/90">
-            {index + 1}/{photos.length}
-          </span>
-
-          <ul className="mt-3 flex justify-center gap-2">
-            {photos.map((photo, position) => (
-              <li key={photo}>
-                <button
-                  type="button"
-                  onClick={() => go(position)}
-                  aria-label={`Photo ${position + 1} of ${photos.length}`}
-                  aria-current={position === index ? 'true' : undefined}
-                  className={`h-2.5 rounded-full border-2 border-line transition-all ${
-                    position === index ? 'w-6 bg-brand' : 'w-2.5 bg-background'
-                  }`}
-                />
-              </li>
-            ))}
-          </ul>
-        </>
+        <ul className="mt-3 flex justify-center gap-2">
+          {photos.map((photo, position) => (
+            <li key={photo}>
+              <button
+                type="button"
+                onClick={() => go(position)}
+                aria-label={`Photo ${position + 1} of ${photos.length}`}
+                aria-current={position === index ? 'true' : undefined}
+                className={`h-2.5 rounded-full border-2 border-line transition-all ${
+                  position === index ? 'w-6 bg-brand' : 'w-2.5 bg-background'
+                }`}
+              />
+            </li>
+          ))}
+        </ul>
       )}
     </div>
   )
