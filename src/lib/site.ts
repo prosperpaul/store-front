@@ -5,7 +5,20 @@
  */
 export function siteUrl(): string {
   const configured = process.env.NEXT_PUBLIC_SITE_URL
-  if (configured) return configured.replace(/\/+$/, '')
+
+  if (configured) {
+    const trimmed = configured.replace(/\/+$/, '')
+
+    // This value gets typed into a dashboard by hand and then pasted into
+    // buyers' WhatsApp messages, so tolerate the obvious slips rather than
+    // shipping a link that some apps distrust. Localhost stays http.
+    if (/^http:\/\/(?!localhost|127\.0\.0\.1)/i.test(trimmed)) {
+      return trimmed.replace(/^http:/i, 'https:')
+    }
+    if (!/^https?:\/\//i.test(trimmed)) return `https://${trimmed}`
+
+    return trimmed
+  }
 
   // Vercel sets this automatically on preview deployments.
   if (process.env.VERCEL_URL) return `https://${process.env.VERCEL_URL}`
