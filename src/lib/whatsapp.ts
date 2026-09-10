@@ -27,10 +27,17 @@ export function orderMessage(
     `Hi ${seller.business_name}, I'd like to order:`,
     '',
     `${product.name}${size} - ${money(Number(product.price))}`,
-    productUrl(seller.slug, product.id),
   ]
 
   if (note) lines.push('', note)
+
+  // The link goes last, introduced by text ending in a space.
+  //
+  // Line breaks don't reliably survive into the WhatsApp message, and when
+  // they vanish whatever follows the URL gets swallowed into it -- a buyer's
+  // note turned a working link into a 404. Nothing follows it now, and the
+  // space before it survives even if the newline doesn't.
+  lines.push('', `See it here: ${productUrl(seller.slug, product.id)}`)
 
   return lines.join('\n')
 }
