@@ -47,6 +47,17 @@ export function normaliseHandle(input: string): string {
     .slice(0, 60)
 }
 
+/**
+ * A username, not a display name.
+ *
+ * Worth checking rather than cleaning up: "Chiamaka Prosper" can't be
+ * salvaged into a handle, and silently storing it builds a link that leads
+ * nowhere. Better to say so while she's looking at the field.
+ */
+export function isPlausibleHandle(handle: string): boolean {
+  return /^[A-Za-z0-9._]{1,60}$/.test(handle)
+}
+
 /** Which channels this seller has actually set up, WhatsApp always first. */
 export function availableChannels(seller: Seller): Channel[] {
   const channels: Channel[] = [CHANNELS.whatsapp]

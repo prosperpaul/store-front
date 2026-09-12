@@ -5,13 +5,30 @@ import { revalidatePath } from 'next/cache'
 import { requireUser } from '@/lib/auth'
 import { createClient } from '@/lib/supabase/server'
 import { isPlausiblePhone, normalisePhone, slugify } from '@/lib/format'
-import { normaliseHandle } from '@/lib/channels'
+import { isPlausibleHandle, normaliseHandle } from '@/lib/channels'
 
 export type StoreState = { error?: string }
 
-/** Empty stays null rather than an empty string, so it reads as "not set". */
-function handle(value: FormDataEntryValue | null): string | null {
-  return normaliseHandle(String(value ?? '')) || null
+/**
+ * Empty stays null rather than an empty string, so it reads as "not set".
+ * Anything that isn't a usable username is reported back rather than stored.
+ */
+function handle(
+  value: FormDataEntryValue | null,
+  platform: string
+): { value: string | null } | { error: string } {
+  const raw = String(value ?? '').trim()
+  if (!raw) return { value: null }
+
+  const cleaned = normaliseHandle(raw)
+
+  if (!isPlausibleHandle(cleaned)) {
+    return {
+      error: `"${raw}" doesn't look like a ${platform} username. Use the @name people type to find you, not your display name -- no spaces.`,
+    }
+  }
+
+  return { value: cleaned }
 }
 
 const RESERVED_SLUGS = new Set([
@@ -67,6 +84,15 @@ export async function saveStore(
     return { error: 'That WhatsApp number does not look right. Example: 0801 234 5678.' }
   }
 
+  const instagram = handle(formData.get('instagram'), 'Instagram')
+  if ('error' in instagram) return { error: instagram.error }
+
+  const facebook = handle(formData.get('facebook'), 'Facebook')
+  if ('error' in facebook) return { error: facebook.error }
+
+  const telegram = handle(formData.get('telegram'), 'Telegram')
+  if ('error' in telegram) return { error: telegram.error }
+
   const supabase = await createClient()
   const { error } = await supabase.from('sellers').upsert({
     id: user.id,
@@ -75,9 +101,9 @@ export async function saveStore(
     whatsapp,
     delivery_note: deliveryNote || null,
     logo_url: logoUrl,
-    instagram: handle(formData.get('instagram')),
-    facebook: handle(formData.get('facebook')),
-    telegram: handle(formData.get('telegram')),
+    instagram: instagram.value,
+    facebook: facebook.value,
+    telegram: telegram.value,
     accepts_sms: formData.get('accepts_sms') === 'yes',
   })
 
